@@ -1,0 +1,47 @@
+{
+  "name": "@mamenko/editable-table",
+  "type": "module",
+  "private": false,
+  "version": "0.0.2",
+  "description": "Vue 3 (Vuetify 3 based) tablelike component",
+  "module": "./dist/editable-table.js",
+  "files": [
+    "dist/*"
+  ],
+  "exports": {
+    ".": "./dist/editable-table.js"
+  },
+  "types": "./dist/editable-table.d.ts",
+  "keywords": [
+    "component",
+    "library",
+    "vue",
+    "vue3",
+    "vuetify",
+    "vuetify3"
+  ],
+  "author": "Zhenya Mamenko",
+  "license": "MIT",
+  "scripts": {
+    "build": "vite build && vue-tsc --declaration --emitDeclarationOnly --outFile dist/editable-table.d.ts"
+  },
+  "devDependencies": {
+    "@rollup/plugin-strip": "^3.0.4",
+    "@vitejs/plugin-vue": "^5.0.4",
+    "vite": "^5.2.8",
+    "vite-plugin-css-injected-by-js": "^3.5.0",
+    "vite-plugin-vuetify": "^2.0.3",
+    "vue-tsc": "^2.0.12"
+  },
+  "peerDependencies": {
+    "vue": "^3.4.0",
+    "vuetify": "^3.5.15"
+  },
+  "bugs": {
+    "url": "https://github.com/zhenya-mamenko/editable-table/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhenya-mamenko/editable-table.git"
+  }
+}
