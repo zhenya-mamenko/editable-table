@@ -1,11 +1,10 @@
 #!/bin/bash
 
-update_package_json() {
+set_git_tag() {
   version=$(cat VERSION)
-  npm --no-commit-hooks --no-git-tag-version version $version
-  git add package.json package-lock.json
+  git tag "v$version"
 }
 
-if [ -n $(git diff --cached --name-only | grep -x VERSION) ]; then
-  update_package_json;
+if [ -n $(git log HEAD -1 --name-only | grep -x VERSION) ]; then
+  set_git_tag;
 fi
