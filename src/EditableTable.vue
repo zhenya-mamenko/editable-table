@@ -110,8 +110,8 @@
       },
 
       emitUpdate() {
-        const event = structuredClone(toRaw(this.records));
-        this.$emit("update", event);
+        const rows = structuredClone(toRaw(this.records));
+        this.$emit("update", rows);
       },
 
       error(rowId, columnKey, value, message) {

@@ -172,9 +172,17 @@
         if (this.editing) return;
         this.$emit("selected");
         this.showInput = true;
-        this.inputValue = typeof value === "string" ? value : this.value
         this.$nextTick(() => {
           this.$refs.inputElement.focus();
+          if (value instanceof KeyboardEvent) {
+            this.inputValue = value.key;
+            this.$refs.inputElement.dispatchEvent(new Event("input"));
+            this.$refs.inputElement.$el.dispatchEvent(new KeyboardEvent("keydown", {
+              key: value.key, shiftKey: value.shiftKey, altKey: value.altKey, ctrlKey: value.ctrlKey,
+            }));
+          } else {
+            this.inputValue = typeof value === "string" ? value : this.value
+          }
         });
       },
 
@@ -195,7 +203,7 @@
         } else if (key === "ArrowDown" || key === "ArrowUp") {
           this.$emit("focusMoved", {col: 0, row: key === "ArrowDown" ? 1 : -1, edit: false});
         } else if ((/^[a-z0-9а-я ]$/i).test(key)) {
-          this.handleClick(key);
+          this.handleClick(e);
         } else {
           prevent = false;
         }
