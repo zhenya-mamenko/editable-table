@@ -102,6 +102,7 @@
     methods: {
       deleteRow(rowId) {
         this.records = this.records.filter(r => r.id !== rowId);
+        if (this.records.length === 0) this.newRow();
         this.emitUpdate();
       },
 
@@ -110,7 +111,13 @@
       },
 
       emitUpdate() {
-        const rows = structuredClone(toRaw(this.records));
+        let rows = [];
+        try {
+          rows = structuredClone(toRaw(this.records.map(r => toRaw(r))));
+        } catch (e) {
+          console.warn(`Cannot structuredClone records: ${e}.\nUse JSON instead.`);
+          rows = JSON.parse(JSON.stringify(this.records))
+        }
         this.$emit("update", rows);
       },
 
@@ -131,7 +138,11 @@
         const rowIndex = this.records.findIndex(r => r.id === rowId);
         if (rowIndex + moveRow === -1) return;
         let row = this.records[rowIndex + moveRow];
-        rowId = !row ? (this.newRow() ?? this.records[rowIndex].id) : row.id;
+        if (!row && this.autoAddRow) {
+          rowId = this.newRow() ?? rowId;
+        } else {
+          rowId = row.id;
+        }
 
         const columnIndex = this.columns.findIndex(c => c.key === columnKey);
         if (moveCol !== 0) {
@@ -144,8 +155,8 @@
           if (rowIndex + moveCol === -1) return;
           row = this.records[rowIndex + moveCol];
           if (!row) {
-            if (this.newRow()) {
-              row = this.records[rowIndex + 1];
+            if (this.autoAddRow && (rowId = this.newRow())) {
+              row = this.records.find(r => r.id === rowId);
               columnKey = (columnIndex === 0 && moveCol < 0) ? this.columns.findLast(c => c.editable).key :
                 this.columns.find(c => c.editable).key;
             }
@@ -169,7 +180,6 @@
       },
 
       newRow() {
-        if (!this.autoAddRow) return;
         if (this.records.length > 0) {
           const last = this.records[this.records.length - 1];
           if (Object.entries(last).every(v => v[0] === "id" || v[1] === "")) return;
@@ -207,7 +217,7 @@
     },
 
     mounted() {
-      if (this.columns.length > 0 && this.records.length === 0) {
+      if (this.records.length === 0) {
         this.newRow();
       }
     },
