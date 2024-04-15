@@ -1,0 +1,11 @@
+#!/bin/bash
+
+update_package_json() {
+  version=$(cat VERSION)
+  npm --no-commit-hooks --no-git-tag-version version $version
+  git add package.json package-lock.json
+}
+
+if [ -n $(git diff --cached --name-only | grep -x VERSION) ]; then
+  update_package_json;
+fi
