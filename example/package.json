@@ -4,7 +4,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build_pages": "OUT_DIR=build vite build",
+    "build_pages": "OUT_DIR=build BASE_URL=/editable-table/ vite build",
     "preview": "vite preview"
   },
   "dependencies": {

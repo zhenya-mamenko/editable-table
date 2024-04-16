@@ -102,7 +102,7 @@ These styles for header, rows and cells can be customized too:
 
 Component in action on [site](http://zhenya-mamenko.github.io/editable-table).
 
-Source: https://github.com/zhenya-mamenko/editable-table/example
+[Source](https://github.com/zhenya-mamenko/editable-table/tree/main/example).
 
 ## Dependencies
 

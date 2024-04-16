@@ -44,6 +44,7 @@ export default defineConfig({
   server: {
     port: 3000,
   },
+  base: process.env.BASE_URL || '/',
   build: {
     outDir: process.env.OUT_DIR || 'dist',
   }
