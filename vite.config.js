@@ -16,6 +16,7 @@ export default defineConfig({
     cssInjectedByJsPlugin(),
   ],
   build: {
+    sourcemap: true,
     minify: false,
     lib: {
       formats: ["es"],
