@@ -1,7 +1,8 @@
 <template>
   <v-container
-    class="editable-table"
+    :class="`editable-table ${!active ? 'editable-table-non-active' : ''}`"
     :style="height ? `overflow-y: auto; height: ${height}; max-height: ${height};` : ''"
+    @focus="handleFocus"
   >
     <v-row
       :class="`d-flex d-sm-none flex-grow-1 ${height ? 'h-100' : ''}`"
@@ -24,25 +25,28 @@
       </v-col>
     </v-row>
     <v-row v-for="record in records"
-      class="flex-nowrap editable-table-row d-none d-sm-flex"
-      :key="record.id"
+      :class="`flex-nowrap editable-table-row d-none d-sm-flex`"
+      :key="record.__id"
     >
       <editable-table-cell v-for="column in columns"
         :class="column.class ?? ''"
         :border="border"
         :editable="!readonly && column.editable"
-        :focused="focused.row === record.id && focused.column === column.key"
+        :exact="(column.items?.exact ?? false) && columnItems[column.key] && (columnItems[column.key].length > 0)"
+        :filterSubtitle="column.items?.filterSubtitle ?? true"
+        :focused="focused.row === record.__id && focused.column === column.key"
         :format="column.format ?? null"
-        :items="column.items ?? []"
+        :items="columnItems[column.key] ?? []"
         :key="column.key"
-        :ref="instance => {cellsRefs[record.id] ??= {}; cellsRefs[record.id][column.key] = instance}"
+        :ref="instance => {cellsRefs[record.__id] ??= {}; cellsRefs[record.__id][column.key] = instance}"
         :type="column.type"
         :value="record[column.key] ?? null"
         :width="column.width ?? null"
-        @delete="deleteRow(record.id)"
-        @focus-moved="focusCell(record.id, column.key, $event.col, $event.row, $event.edit)"
-        @selected="editing = true; focused = { row: record.id, column: column.key }"
-        @update="updateCell(record.id, column.key, $event.value, $event.focusMoved)"
+        @delete="deleteRow(record.__id)"
+        @focus-moved="focusCell(record.__id, column.key, $event.col, $event.row, $event.edit)"
+        @search="value => search(value, column)"
+        @selected="editing = true; focused = { row: record.__id, column: column.key }"
+        @update="updateCell(record.__id, column.key, $event.value, $event.focusMoved)"
       />
     </v-row>
   </v-container>
@@ -83,10 +87,13 @@
 
     data() {
       return {
-        records: this.rows ?? [],
-        focused: { row: null, column: null },
+        active: false,
         cellsRefs: [],
+        columnItems: {},
         editing: false,
+        focused: { row: null, column: null },
+        records: this.rows ? this.rows.map((r, i) => { return { __id: i, ...r } } ) : [],
+        timerId: null,
       }
     },
 
@@ -94,15 +101,30 @@
       // update: rows: Array
       // emits when row is updated
       "update",
-      // validationError: {rowId: number, columnKey: string, value: any}
+      // validationError: {rowIndex: Number, columnKey: String, value, message: String}
       // emits when validation error occurs
       "validationError",
     ],
 
     methods: {
       deleteRow(rowId) {
-        this.records = this.records.filter(r => r.id !== rowId);
-        if (this.records.length === 0) this.newRow();
+        const columnKey = this.focused.column ?? (this.columns.find(c => c.editable)?.key ?? null);
+        const rowIndex = this.records.findIndex(r => r.__id === rowId);
+        this.records = this.records.filter(r => r.__id !== rowId);
+        if (this.records.length === 0) {
+          rowId = this.newRow();
+        } else if (rowIndex === this.records.length) {
+          rowId = this.records[rowIndex-1].__id;
+        } else {
+          rowId = this.records[rowIndex].__id;
+        }
+        this.focused = {
+          row: rowId,
+          column: columnKey
+        };
+        this.$nextTick(() => {
+          this.focusedRef?.focusCell();
+        });
         this.emitUpdate();
       },
 
@@ -113,10 +135,10 @@
       emitUpdate() {
         let rows = [];
         try {
-          rows = structuredClone(toRaw(this.records.map(r => toRaw(r))));
+          rows = toRaw(this.records.map(r => { const raw = structuredClone(toRaw(r)); delete raw.__id; return raw }));
         } catch (e) {
           console.warn(`Cannot structuredClone records: ${e}.\nUse JSON instead.`);
-          rows = JSON.parse(JSON.stringify(this.records))
+          rows = JSON.parse(JSON.stringify(this.records.map(r => { const raw = { ...r }; delete raw.__id; return raw })))
         }
         this.$emit("update", rows);
       },
@@ -130,18 +152,18 @@
         this.editing = false;
         this.focusedRef.error = true;
         this.doEdit(value);
-        this.$emit("validationError", { rowId, columnKey, value, message });
+        this.$emit("validationError", { rowIndex: this.records.findIndex(r => r.__id === rowId), columnKey, value, message });
       },
 
       focusCell(rowId, columnKey, moveCol, moveRow, edit) {
         this.editing = false;
-        const rowIndex = this.records.findIndex(r => r.id === rowId);
+        const rowIndex = this.records.findIndex(r => r.__id === rowId);
         if (rowIndex + moveRow === -1) return;
         let row = this.records[rowIndex + moveRow];
         if (!row && this.autoAddRow) {
           rowId = this.newRow() ?? rowId;
         } else {
-          rowId = row.id;
+          rowId = row.__id;
         }
 
         const columnIndex = this.columns.findIndex(c => c.key === columnKey);
@@ -156,7 +178,7 @@
           row = this.records[rowIndex + moveCol];
           if (!row) {
             if (this.autoAddRow && (rowId = this.newRow())) {
-              row = this.records.find(r => r.id === rowId);
+              row = this.records.find(r => r.__id === rowId);
               columnKey = (columnIndex === 0 && moveCol < 0) ? this.columns.findLast(c => c.editable).key :
                 this.columns.find(c => c.editable).key;
             }
@@ -169,7 +191,7 @@
               this.columns.find(c => c.editable).key;
           }
           this.focused = {
-            row: row.id,
+            row: row.__id,
             column: columnKey
           };
         }
@@ -179,17 +201,60 @@
         });
       },
 
+      handleFocus() {
+        const columnKey = this.focused.column ?? this.columns.find(c => c.editable)?.key;
+        const rowId =  this.focused.row ?? (this.records.length > 0 ? this.records[0].__id : this.newRow());
+        this.focused = {
+          row: rowId,
+          column: columnKey
+        };
+        this.$nextTick(() => {
+          this.focusedRef?.focusCell();
+        });
+      },
+
+      loadItems() {
+        this.columnItems = {};
+        this.columns.forEach(c => {
+          this.columnItems[c.key] = [];
+          if (c.items) {
+            if (Array.isArray(c.items)) {
+              this.columnItems[c.key] = c.items;
+            } else {
+              let items = [];
+              if (c.items.values) {
+                try {
+                  items = structuredClone(toRaw(c.items.values.map(v => toRaw(v))));
+                } catch (e) {
+                  items = JSON.parse(JSON.stringify(c.items.values))
+                }
+              }
+              this.columnItems[c.key] = items;
+            }
+          }
+        });
+      },
+
+      async search(value, column) {
+        if (column.items?.search) {
+          this.focusedRef.loading = true;
+          let values = column.items.search(value);
+          if (values instanceof Promise) values = await values;
+          this.columnItems[column.key] = values ?? [];
+          this.focusedRef.loading = false;
+        }
+      },
+
       newRow() {
         if (this.records.length > 0) {
           const last = this.records[this.records.length - 1];
-          if (Object.entries(last).every(v => v[0] === "id" || v[1] === "")) return;
+          if (Object.entries(last).every(v => v[0] === "__id" || v[1] === "")) return;
         }
-        const id = this.records.length > 0 ? Math.max(...this.records.map(x => x.id)) : 0;
+        const id = this.records.length > 0 ? Math.max(...this.records.map(x => x.__id)) : 0;
         if (this.readonly) {
           if (this.records.length === 0) throw new Error("No records to show.");
-          return id;
         }
-        const r = { id: id + 1}
+        const r = { __id: id + 1}
         this.columns.forEach(c => r[c.key] = "");
         this.records.push(r);
         return id + 1;
@@ -201,13 +266,13 @@
         let validation = column?.validation;
         if (typeof validation === "string") validation = validations[validation];
         if (validation && (typeof validation === "function")) {
-          const valid = validation(value, rowId, columnKey);
+          const valid = validation(value, this.records.find(r => r.__id === rowId), columnKey);
           if (valid !== true) {
             this.error(rowId, columnKey, value, valid);
             return;
           }
         }
-        const record = this.records.find(r => r.id === rowId);
+        const record = this.records.find(r => r.__id === rowId);
         record[columnKey] = value;
         this.emitUpdate();
         this.$nextTick(() => {
@@ -220,6 +285,12 @@
       if (this.records.length === 0) {
         this.newRow();
       }
+
+      this.timerId = setInterval(() => {
+        this.active = Boolean(document.activeElement.closest(".editable-table"));
+      }, 100);
+
+      this.loadItems();
     },
 
     props: {
@@ -244,7 +315,7 @@
       //   label: column label
       //   type: column type
       //   editable: column is editable
-      //   validation: column validation standard string OR function (value, rowId, columnKey) returning true or error message
+      //   validation: column validation standard string OR function (value, row, columnKey) returning true or error message
       //   width: column width
       columns: {
         type: Array,
@@ -265,7 +336,15 @@
       },
     },
 
+    unmounted() {
+      clearInterval(this.timerId);
+    },
+
     watch: {
+      columns(newValue) {
+        this.loadItems(newValue);
+      },
+
       focused() {
         const ref = this.focusedRef;
         if (ref?.$el?.scrollIntoViewIfNeeded) {
@@ -279,7 +358,8 @@
 <style>
   .editable-table {
     --cell-error-outline: 2px solid rgb(var(--v-theme-error));
-    --cell-focused-outline: 2px solid rgb(var(--v-theme-secondary));
+    --cell-focused-outline: 2px solid rgb(var(--v-theme-primary));
+    --cell-focused-outline-non-active: 2px solid rgba(var(--v-theme-primary), var(--v-disabled-opacity));
     --cell-focused-outline-offset: -2px;
     --header-background-color: rgb(var(--v-theme-surface-light));
     --header-border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
@@ -288,6 +368,10 @@
     --header-text-align: center;
     --header-text-color: rgb(var(--v-theme-on-surface-light));
     --row-border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  }
+
+  .editable-table:focus {
+    outline: none;
   }
 
   .editable-table-header {
@@ -344,6 +428,11 @@
 
   .editable-table-cell-focused {
     outline: var(--cell-focused-outline);
+    outline-offset: var(--cell-focused-outline-offset);
+  }
+
+  .editable-table-non-active .editable-table-cell-focused {
+    outline: var(--cell-focused-outline-non-active);
     outline-offset: var(--cell-focused-outline-offset);
   }
 

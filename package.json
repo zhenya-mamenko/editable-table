@@ -2,7 +2,7 @@
   "name": "@mamenko/editable-table",
   "type": "module",
   "private": false,
-  "version": "0.0.5",
+  "version": "0.1.0",
   "description": "Vue 3 (Vuetify 3 based) tablelike component",
   "module": "./dist/editable-table.js",
   "files": [
@@ -35,7 +35,7 @@
   },
   "peerDependencies": {
     "vue": "^3.4.0",
-    "vuetify": "^3.5.15"
+    "vuetify": "^3.5.16"
   },
   "bugs": {
     "url": "https://github.com/zhenya-mamenko/editable-table/issues"

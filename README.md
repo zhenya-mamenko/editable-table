@@ -47,7 +47,7 @@ export default {
 * `noHeader` (Boolean): Disables table header.
 * `noSoundOnError` (Boolean): Disables sound on validation error.
 * `readonly` (Boolean): Prevents editing of the table.
-* `rows` (Array, required): Array of objects representing table row data. MUST contain unique integer id for every record.
+* `rows` (Array, required): Array of objects representing table row data.
 
 ### Structure of Column Objects
 
@@ -63,7 +63,7 @@ Use `{0}` for simple type; `{title}`, `{value}`, etc for object type as placehol
 * `label` (String): Column label.
 * `type` (String): Column type (`text`, `email`, `tel`, `number`, `date`, `time`).
 * `editable` (Boolean): Flag for column editability.
-* `validation` (String|Function): Column validation standard string or function returning true or error message.
+* `validation` (String|Function): Column validation standard string (`int`, `number`, `required`) or function (`value`, `rowIndex`: Number, `columnKey`: String) returning `true` or error message.
 * `width` (Number): Column width (1-12) in Vuetify grid units.
 
 ## Events
@@ -78,7 +78,8 @@ CSS variables define various visual aspects of the editable table component, suc
 ```css
   .editable-table {
     --cell-error-outline: 2px solid rgb(var(--v-theme-error));
-    --cell-focused-outline: 2px solid rgb(var(--v-theme-secondary));
+    --cell-focused-outline: 2px solid rgb(var(--v-theme-primary));
+    --cell-focused-outline-non-active: 2px solid rgba(var(--v-theme-primary), var(--v-disabled-opacity));
     --cell-focused-outline-offset: -2px;
     --header-background-color: rgb(var(--v-theme-surface-light));
     --header-border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));

@@ -8,7 +8,7 @@
       ${border ? 'editable-table-cell-border' : ''}
     `"
     :cols="colWidth"
-    :tabindex="editable ? 0 : null"
+    :tabindex="-1"
     @click="handleClick"
     @keydown.self="handleKeydown"
   >
@@ -18,10 +18,7 @@
     />
     <v-combobox
       :auto-select-first="exact"
-      :class="`w-100 editable-table-cell-content
-        ${showInput ? '' : 'd-none'}
-        ${isRightAligned(type) ? 'editable-table-cell-content-right' : ''}
-      `"
+      :class="`w-100 editable-table-cell-content ${showInput ? '' : 'd-none'} ${isRightAligned(type) ? 'editable-table-cell-content-right' : ''}`"
       density="compact"
       :filter-keys="filterKeys"
       flat
@@ -86,7 +83,7 @@
         let subtitle = [];
         if (
           this.showInput
-          && this.items.filterSubtitle !== false
+          && this.filterSubtitle !== false
           && !!this.listItems
           && this.listItems.length !== 0
           && this.listItems[0].props?.subtitle
@@ -106,16 +103,14 @@
     data() {
       return {
         colWidth: this.width ?? null,
-        exact: false,
         inputValue: this.value,
         lastKey: "",
-        listItems: undefined,
+        listItems: [],
         loading: false,
         menuOpened: false,
         returnObject: false,
-        showInput: false,
         showError: false,
-        values: [],
+          showInput: false,
       }
     },
 
@@ -123,19 +118,25 @@
       // delete: void
       // emits when delete key is pressed twice
       "delete",
-      // focusMoved: {col: number, row: number, edit: boolean}
+      // focusMoved: {col: Number, row: Number, edit: Boolean}
       // emits when focus should be moved to another cell
       "focusMoved",
-      // selcted: void
+      // search: String
+      // emits when search items is requested
+      "search",
+      // selected: void
       // emits when cell is selected
       "selected",
-      // update: {value: any, focusMoved: {col: number, row: number, edit: boolean}}
+      // update: {value: any, focusMoved: {col: Number, row: Number, edit: Boolean}}
       // emits when cell value is updated
       "update"
     ],
 
     methods: {
-      cancelEdit() {
+      cancelEdit(event) {
+        if (event instanceof Event) {
+          event.stopImmediatePropagation();
+        }
         this.showInput = false;
         this.inputValue = this.value;
         this.editing = false;
@@ -143,26 +144,30 @@
       },
 
       focusCell() {
-        this.$refs.inputElement.closest("div.v-col").focus();
+        this.$refs.inputElement?.closest("div.v-col").focus();
       },
 
       handleBlur(moveCol, event) {
-        if (this.showInput && !this.menuOpened) {
-          if (event instanceof Event) {
-            event.stopImmediatePropagation();
+        if (event instanceof Event) {
+          event.stopImmediatePropagation();
+          if (event.key === "Enter" && this.menuOpened && this.exact) {
+            this.$refs.inputElement.$el.dispatchEvent(new KeyboardEvent("keydown", {key: "Tab"}));
           }
+        }
+        if (this.showInput && (!this.menuOpened || !this.exact)) {
           let value = this.inputValue ?? "";
           const hasValue = Object.hasOwn(value, "value");
           value = hasValue ? value.value : value;
           let item = this.listItems?.find(i => (hasValue ? i.value : i.title ?? i) == value);
           if (this.returnObject) {
-            item = this.values?.find(i => i.value == value);
+            item = this.items?.find(i => i.value == value);
           }
           if (this.exact && value && value !=="" && !item) {
             this.cancelEdit();
             return;
           }
           this.showInput = false;
+          this.editing = false;
           this.$emit("update", {value: this.exact ? item : value, focusMoved: {col: moveCol, row: 0, edit: true}});
         }
       },
@@ -194,15 +199,13 @@
             key = "";
             this.$emit("delete");
           }
-        } else if (key === "Enter") {
+        } else if (key === "Enter" || key === " ") {
           this.handleClick();
-        } else if (key === "Tab") {
-          this.$emit("focusMoved", {col: e.shiftKey ? -1 : 1, row: 0, edit: false});
         } else if (key === "ArrowRight" || key === "ArrowLeft") {
           this.$emit("focusMoved", {col: key === "ArrowRight" ? 1 : -1, row: 0, edit: false});
         } else if (key === "ArrowDown" || key === "ArrowUp") {
           this.$emit("focusMoved", {col: 0, row: key === "ArrowDown" ? 1 : -1, edit: false});
-        } else if ((/^[a-z0-9а-я ]$/i).test(key)) {
+        } else if ((/^[a-z0-9а-я]$/i).test(key)) {
           this.handleClick(e);
         } else {
           prevent = false;
@@ -219,14 +222,7 @@
       },
 
       async handleSearch(v) {
-        if (isPlainObject(this.items) && this.items.search) {
-          this.loading = true;
-          let values = this.items.search(v);
-          if (values instanceof Promise) values = await values;
-          const items = {...this.items, values};
-          this.loadItems(items);
-          this.loading = false;
-        }
+        this.$emit("search", v);
       },
 
       isRightAligned(t) {
@@ -234,32 +230,21 @@
       },
 
       loadItems(items) {
-        this.values = [];
-        let listItems = undefined;
-        if (items instanceof Array) {
-          listItems = items.map(x => x.toString());
-        } else if (isPlainObject(items)) {
-          if (items.values.length > 0 && !isPlainObject(items.values[0])) {
-            this.listItems = (!items.exact ? items.values : Array.from(new Set(items.values))).map(x => x.toString());
+        let listItems = [];
+        if (items.length > 0) {
+          if (Object.hasOwn(items[0], "value")) this.returnObject = true;
+          if (this.returnObject) {
+            listItems = items.map(v => {
+              const result = { title: v.title, value: v.value ?? v.title };
+              if (v.subtitle) result.props = { subtitle: v.subtitle };
+              return result;
+            });
           } else {
-            if (items.values.length > 0) {
-              if (Object.hasOwn(items.values[0], "value")) this.returnObject = true;
-              this.values = items.values;
-              listItems = items.values.map(v => {
-                const result = { title: v.title, value: v.value ?? v.title };
-                if (v.subtitle) result.props = { subtitle: v.subtitle };
-                return result;
-              });
-            }
+            listItems = items;
           }
-          this.exact = !!items.exact && (items.values.length > 0);
         }
         this.listItems = listItems;
       },
-    },
-
-    mounted() {
-      this.loadItems(this.items);
     },
 
     props: {
@@ -270,6 +255,16 @@
       },
       // editable: cell is editable
       editable: {
+        type: Boolean,
+        default: true,
+      },
+      // exact: value must be exact from combobox items
+      exact: {
+        type: Boolean,
+        default: false,
+      },
+      // filterSubtitle: enable filtering by subtitle
+      filterSubtitle: {
         type: Boolean,
         default: true,
       },
@@ -306,6 +301,13 @@
     },
 
     watch: {
+      items: {
+        handler(newValue) {
+          this.loadItems(newValue);
+        },
+        immediate: true,
+      },
+
       value(newValue) {
         this.inputValue = newValue;
       },
