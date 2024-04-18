@@ -50,8 +50,8 @@
                     <ul class="ms-4 mt-1">
                       <li><kbd>Arrow up</kbd> — move to the previous row;</li>
                       <li><kbd>Arrow down</kbd> — move to the next row;</li>
-                      <li><kbd>Arrow left</kbd> / <kbd>Shift+Tab</kbd> — move to the previous cell;</li>
-                      <li><kbd>Arrow right</kbd> / <kbd>Tab</kbd>  — move to the next cell;</li>
+                      <li><kbd>Arrow left</kbd> — move to the previous cell;</li>
+                      <li><kbd>Arrow right</kbd>  — move to the next cell;</li>
                       <li><kbd>Enter</kbd> / <kbd>Space</kbd> — enter to editing mode;</li>
                       <li><kbd>Del</kbd> <span class="text-caption">(x2)</span> — remove the row.</li>
                     </ul>
@@ -64,9 +64,11 @@
         <v-row>
           <v-col>
             <EditableTable
+            ref="table"
               border
               :columns="columns"
               :rows="rows"
+              tabindex="1"
               @update="handleUpdate"
               @validation-error="handleValidationError"
             />
@@ -78,7 +80,6 @@
               v-if="errorMessage"
               type="error"
               dismissible
-              border="left"
               elevation="2"
               icon="mdi-alert"
             >
@@ -86,6 +87,7 @@
             </v-alert>
           </v-col>
         </v-row>
+        <v-footer><p>Copyright (c) 2024-present, &nbsp; <a href="https://github.com/zhenya-mamenko/editable-table/">Zhenya Mamenko</a></p></v-footer>
       </v-container>
     </v-main>
   </v-app>
@@ -100,6 +102,7 @@ export default {
   components: {
     EditableTable
   },
+
   data() {
     return {
       errorMessage: "",
@@ -114,7 +117,7 @@ export default {
         { key: "name", label: "Name", type: "text", editable: false, width: 3, class: "bg-grey-lighten-5",
           format: `${avatarTemplate}{name}`,
         },
-        { key: "department", label: "Department", type: "text", editable: true, width: 4, validation: "required",
+        { key: "department", label: "Department", type: "text", editable: true, width: 3, validation: "required",
           items: {
             values: [
               {value: 1, title: 'HR', subtitle: 'Human resources'},
@@ -132,17 +135,18 @@ export default {
           },
           format: "{title} ({subtitle})",
         },
+        { key: "phone", label: "Phone", type: "tel", editable: true, width: 2},
         { key: "salary", label: "Salary", type: "number", editable: true, validation: "int", format: "${0}", items: [1000, 1200, 1500] },
       ],
       loadedData: {},
-      rows: [
-      ]
+      rows: [],
     }
   },
+
   methods: {
     async emailSearch(value) {
       let users = [];
-      if (value.length > 0) {
+      if (value?.length > 0) {
         const response = await fetch(`https://reqres.in/api/users?per_page=100&page=1`);
         const data = await response.json();
         users = data.data
@@ -152,9 +156,8 @@ export default {
       this.loadedData["users"] = users;
       return users.map(user => ({...user, value: user.email, title: user.email, subtitle: `${user.first_name} ${user.last_name}` }));
     },
-    emailValidation(value, rowId, columnKey) {
+    emailValidation(value, row, columnKey) {
       if (!value || value.length === 0) return "Email must be selected";
-      const row = this.rows.find(r => r.id === rowId);
       if (this.loadedData?.users?.find) {
         const data = this.loadedData.users.find(d => d.email === value.value);
         row["name"] = { name: `${data.first_name} ${data.last_name}`, avatar: data.avatar };
@@ -165,12 +168,20 @@ export default {
     },
     handleUpdate(rows) {
       console.log("Updated rows:", rows);
-      this.errorMessage = "";
     },
     handleValidationError({rowId, columnKey, value, message}) {
       console.info(`Validation error on [${rowId}][${columnKey}], value: ${value}, message: ${message}`);
       this.errorMessage = message;
     },
-  }
-};
+  },
+  watch: {
+    errorMessage(value) {
+      if (value) {
+        setTimeout(() => {
+          this.errorMessage = "";
+        }, 3000);
+      }
+    }
+  },
+}
 </script>
