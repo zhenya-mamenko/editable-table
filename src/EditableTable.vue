@@ -351,6 +351,10 @@
           ref.$el.scrollIntoViewIfNeeded(false);
         }
       },
+
+      rows(newValue) {
+        this.records = newValue.map((r, i) => { return { __id: i, ...r } });
+      },
     },
   }
 </script>

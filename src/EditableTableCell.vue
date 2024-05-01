@@ -17,7 +17,7 @@
       v-html="html"
     />
     <v-combobox
-      :auto-select-first="exact"
+      :auto-select-first="true"
       :class="`w-100 editable-table-cell-content ${showInput ? '' : 'd-none'} ${isRightAligned(type) ? 'editable-table-cell-content-right' : ''}`"
       density="compact"
       :filter-keys="filterKeys"
@@ -29,8 +29,9 @@
       :items="listItems"
       :loading="loading"
       :menu-icon="null"
+      :menu-props="menuProps"
       :open-on-clear="false"
-      ref="inputElement"
+      :ref="instance => ref = instance"
       :return-object="returnObject"
       single-line
       :type="type"
@@ -41,7 +42,7 @@
       @keydown.enter.prevent.stop="handleBlur(0)"
       @keydown.shift.tab.stop.prevent="handleBlur(-1)"
       @keydown.tab.exact.stop.prevent="handleBlur(1)"
-      @keydown.esc.stop.prevent="cancelEdit"
+      @keydown.esc.stop.prevent="() => { if (!menuOpened) cancelEdit() }"
       @update:menu="handleMenu"
       @update:search="handleSearch"
     />
@@ -97,7 +98,13 @@
           return this.format.formatUnicorn(v);
         }
         return (isPlainObject(this.value) ? this.value.title : this.value) ?? "";
-      }
+      },
+
+      menuProps() {
+        return {
+          target: this.ref,
+        };
+      },
     },
 
     data() {
@@ -108,9 +115,10 @@
         listItems: [],
         loading: false,
         menuOpened: false,
+        ref: null,
         returnObject: false,
         showError: false,
-          showInput: false,
+        showInput: false,
       }
     },
 
@@ -144,17 +152,17 @@
       },
 
       focusCell() {
-        this.$refs.inputElement?.closest("div.v-col").focus();
+        this.ref?.closest("div.v-col").focus();
       },
 
       handleBlur(moveCol, event) {
         if (event instanceof Event) {
           event.stopImmediatePropagation();
-          if (event.key === "Enter" && this.menuOpened && this.exact) {
-            this.$refs.inputElement.$el.dispatchEvent(new KeyboardEvent("keydown", {key: "Tab"}));
+          if (event.key === "Enter" && this.menuOpened) {
+            this.ref.$el.dispatchEvent(new KeyboardEvent("keydown", {key: "Tab"}));
           }
         }
-        if (this.showInput && (!this.menuOpened || !this.exact)) {
+        if (this.showInput && !this.menuOpened) {
           let value = this.inputValue ?? "";
           const hasValue = Object.hasOwn(value, "value");
           value = hasValue ? value.value : value;
@@ -178,11 +186,11 @@
         this.$emit("selected");
         this.showInput = true;
         this.$nextTick(() => {
-          this.$refs.inputElement.focus();
+          this.ref.focus();
           if (value instanceof KeyboardEvent) {
             this.inputValue = value.key;
-            this.$refs.inputElement.dispatchEvent(new Event("input"));
-            this.$refs.inputElement.$el.dispatchEvent(new KeyboardEvent("keydown", {
+            this.ref.dispatchEvent(new Event("input"));
+            this.ref.$el.dispatchEvent(new KeyboardEvent("keydown", {
               key: value.key, shiftKey: value.shiftKey, altKey: value.altKey, ctrlKey: value.ctrlKey,
             }));
           } else {
@@ -218,7 +226,10 @@
       },
 
       handleMenu(v) {
-        this.menuOpened = v && this.listItems?.length > 0;
+        const result = v && this.listItems?.length > 0;
+        this.$nextTick(() => {
+          this.menuOpened = result;
+        });
       },
 
       async handleSearch(v) {
