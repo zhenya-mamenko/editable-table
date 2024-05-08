@@ -137,7 +137,6 @@
         try {
           rows = toRaw(this.records.map(r => { const raw = structuredClone(toRaw(r)); delete raw.__id; return raw }));
         } catch (e) {
-          console.warn(`Cannot structuredClone records: ${e}.\nUse JSON instead.`);
           rows = JSON.parse(JSON.stringify(this.records.map(r => { const raw = { ...r }; delete raw.__id; return raw })))
         }
         this.$emit("update", rows);
@@ -150,9 +149,10 @@
           snd.play();
         }
         this.editing = false;
-        this.focusedRef.error = true;
+        if (this.focusedRef) this.focusedRef.error = true;
+        const rowIndex = this.records.findIndex(r => r.__id === rowId);
+        this.$emit("validationError", { rowIndex, columnKey, value, message });
         this.doEdit(value);
-        this.$emit("validationError", { rowIndex: this.records.findIndex(r => r.__id === rowId), columnKey, value, message });
       },
 
       focusCell(rowId, columnKey, moveCol, moveRow, edit) {
@@ -195,6 +195,11 @@
             column: columnKey
           };
         }
+
+        if ((moveCol !== 0 || moveRow !== 0) && Boolean(this.columns.find(c => c.key === columnKey)?.items?.search)) {
+          this.columnItems[columnKey] = [];
+        }
+
         this.$nextTick(() => {
           this.focusedRef?.focusCell();
           if (edit) this.doEdit();
@@ -236,7 +241,7 @@
       },
 
       async search(value, column) {
-        if (column.items?.search) {
+        if (column.items?.search && this.focusedRef ) {
           this.focusedRef.loading = true;
           let values = column.items.search(value);
           if (values instanceof Promise) values = await values;
@@ -251,9 +256,6 @@
           if (Object.entries(last).every(v => v[0] === "__id" || v[1] === "")) return;
         }
         const id = this.records.length > 0 ? Math.max(...this.records.map(x => x.__id)) : 0;
-        if (this.readonly) {
-          if (this.records.length === 0) throw new Error("No records to show.");
-        }
         const r = { __id: id + 1}
         this.columns.forEach(c => r[c.key] = "");
         this.records.push(r);
@@ -275,6 +277,9 @@
         const record = this.records.find(r => r.__id === rowId);
         record[columnKey] = value;
         this.emitUpdate();
+        if ((focusMoved.col !== 0 || focusMoved.row !== 0) && Boolean(this.columns.find(c => c.key === columnKey)?.items?.search)) {
+          this.columnItems[columnKey] = [];
+        }
         this.$nextTick(() => {
           this.focusCell(rowId, columnKey, focusMoved.col, focusMoved.row, focusMoved.edit && focusMoved.col !== 0);
         });
@@ -285,12 +290,15 @@
       if (this.records.length === 0) {
         this.newRow();
       }
+      this.loadItems();
 
       this.timerId = setInterval(() => {
-        this.active = Boolean(document.activeElement.closest(".editable-table"));
+        const active = Boolean(document.activeElement.closest(".editable-table"));
+        if (this.active !== active) {
+          this.active = active; 
+          this.emitUpdate();
+        }
       }, 100);
-
-      this.loadItems();
     },
 
     props: {

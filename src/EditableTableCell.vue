@@ -200,6 +200,7 @@
       },
 
       handleKeydown(e) {
+        if (!this.editable) return;
         let prevent = true;
         let key = e.key;
         if (key === "Delete") {

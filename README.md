@@ -107,7 +107,7 @@ Component in action on [site](http://zhenya-mamenko.github.io/editable-table).
 
 ## Dependencies
 
-This component requires `vue` version 3.4.0 and above; `vuetify` version 3.5.11 and above.
+This component requires `vue` version 3.4.0 and above; `vuetify` version 3.6.4 and above.
 
 ## License
 
