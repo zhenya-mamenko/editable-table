@@ -136,7 +136,9 @@ export default {
           format: "{title} ({subtitle})",
         },
         { key: "phone", label: "Phone", type: "tel", editable: true, width: 2},
-        { key: "salary", label: "Salary", type: "number", editable: true, validation: "int", format: "${0}", items: [1000, 1200, 1500] },
+        { key: "salary", label: "Salary", type: "number", editable: true, validation: "int", format: "${0}",
+          items: {values: [1000, 1200, 1500], exact: false}
+        },
       ],
       loadedData: {},
       rows: [],
@@ -169,11 +171,12 @@ export default {
     handleUpdate(rows) {
       console.log("Updated rows:", rows);
     },
-    handleValidationError({rowId, columnKey, value, message}) {
-      console.info(`Validation error on [${rowId}][${columnKey}], value: ${value}, message: ${message}`);
+    handleValidationError({rowIndex, columnKey, value, message}) {
+      console.info(`Validation error on [${rowIndex}][${columnKey}], value: ${value}, message: ${message}`);
       this.errorMessage = message;
     },
   },
+
   watch: {
     errorMessage(value) {
       if (value) {
