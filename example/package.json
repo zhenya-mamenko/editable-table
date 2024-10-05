@@ -8,11 +8,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@mamenko/editable-table": "^0.1.2",
+    "@mamenko/editable-table": "^0.1.3",
     "@mdi/font": "7.0.96",
+    "magic-string": "^0.30.11",
     "roboto-fontface": "*",
     "vue": "^3.4.27",
-    "vuetify": "^3.6.4"
+    "vuetify": "^3.7.2"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.4",
