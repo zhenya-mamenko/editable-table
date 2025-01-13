@@ -8,7 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@mamenko/editable-table": "^0.1.5",
+    "@mamenko/editable-table": "^0.1.6",
     "@mdi/font": "7.0.96",
     "magic-string": "^0.30.11",
     "roboto-fontface": "*",
