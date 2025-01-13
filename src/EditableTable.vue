@@ -357,9 +357,7 @@
       },
 
       editing(newValue) {
-        if (newValue !== this.editing) {
-          this.$emit("editingModeChanged", newValue);
-        }
+        this.$emit("editingModeChanged", newValue);
       },
 
       focused() {
