@@ -64,17 +64,21 @@
         <v-row>
           <v-col>
             <EditableTable
-            ref="table"
+              ref="table"
               border
               :columns="columns"
               :rows="rows"
               tabindex="1"
+              @editingModeChanged="handleEditingModeChanged"
               @update="handleUpdate"
               @validation-error="handleValidationError"
             />
           </v-col>
         </v-row>
-        <v-row>
+        <v-row class="mb-3">
+          <v-col class="ps-4" cols="2">
+            <kbd class="bg-indigo-darken-4 pa-2">{{ mode }} mode</kbd>
+          </v-col>
           <v-col>
             <v-alert
               v-if="errorMessage"
@@ -105,7 +109,6 @@ export default {
 
   data() {
     return {
-      errorMessage: "",
       columns: [
         { key: "email", label: "Email", type: "email", editable: true, width: 3, validation: this.emailValidation,
           items: {
@@ -140,7 +143,9 @@ export default {
           items: {values: [1000, 1200, 1500], exact: false}
         },
       ],
+      errorMessage: "",
       loadedData: {},
+      mode: "View",
       rows: [],
     }
   },
@@ -167,6 +172,10 @@ export default {
         row["name"] =  "";
       }
       return true;
+    },
+    handleEditingModeChanged(isEditing) {
+      console.log("Editing mode changed:", isEditing);
+      this.mode = isEditing ? "Edit" : "View";
     },
     handleUpdate(rows) {
       console.log("Updated rows:", rows);
