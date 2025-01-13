@@ -68,6 +68,7 @@ Use `{0}` for simple type; `{title}`, `{value}`, etc for object type as placehol
 
 ## Events
 
+* `editingModeChanged` (isEditing: Boolean): Triggered when cell switched in editing mode from viewing or vice versa.
 * `update` (rows: Array): Triggered when a row's data is updated.
 * `validationError` ({rowId: number, columnKey: string, value: any, message: string}): Triggered when a validation error occurs.
 
