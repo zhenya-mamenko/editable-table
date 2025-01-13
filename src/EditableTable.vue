@@ -98,8 +98,11 @@
     },
 
     emits: [
-      // update: rows: Array
-      // emits when row is updated
+      // editingModeChanged: Boolean
+      // emits new editing mode's value when editing mode is changed
+      "editingModeChanged",
+      // update: Array
+      // emits rows when row is updated
       "update",
       // validationError: {rowIndex: Number, columnKey: String, value, message: String}
       // emits when validation error occurs
@@ -351,6 +354,12 @@
     watch: {
       columns(newValue) {
         this.loadItems(newValue);
+      },
+
+      editing(newValue) {
+        if (newValue !== this.editing) {
+          this.$emit("editingModeChanged", newValue);
+        }
       },
 
       focused() {
