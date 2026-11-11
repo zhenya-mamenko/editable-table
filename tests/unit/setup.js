@@ -1,4 +1,4 @@
-import { afterEach, expect, vi } from "vitest";
+import { afterEach, beforeEach, expect, vi } from "vitest";
 import { enableAutoUnmount } from "@vue/test-utils";
 import { errors } from "./helpers.js";
 
@@ -43,6 +43,18 @@ globalThis.Audio = class {
     audio.play(this);
   }
 };
+
+// The table checks every 100ms whether the focus is inside it and emits "update" when this changes.
+// With real timers the check runs at a random moment of the test, so the number of "update" events
+// depends on the speed of the machine. The timer of the check runs only when the test advances it
+// (see "activity" tests), the timers used by Vuetify (setTimeout) stay real.
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+});
+// Registered before auto unmount, so it runs after the components are unmounted (hooks run in reverse order)
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 enableAutoUnmount(afterEach);
 afterEach(() => {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   cellOf, cellText, exampleColumns, exampleRows, flush, focusedPosition, focusTable, inputOf, isEditing, lastEmitted,
   mountTable, press, pressOnFocused, rowsOf, rowTexts,
@@ -38,6 +38,60 @@ describe("focus", () => {
     document.activeElement.blur();
     await focusTable(wrapper);
     expect(focusedPosition(wrapper)).toEqual([1, 3]);
+  });
+});
+
+describe("activity", () => {
+  // The table checks every 100ms whether the focus is inside it
+  const check = async () => {
+    vi.advanceTimersByTime(100);
+    await flush();
+  };
+  const isActive = (wrapper) => !wrapper.classes().includes("editable-table-non-active");
+
+  it("is not active until the focus is inside the table", async () => {
+    const wrapper = mountTable();
+    await check();
+    expect(isActive(wrapper)).toBe(false);
+    expect(wrapper.emitted("update")).toBeUndefined();
+  });
+
+  it("becomes active when the focus moves inside and emits the rows", async () => {
+    const wrapper = mountTable();
+    await focusTable(wrapper);
+    expect(isActive(wrapper)).toBe(false);
+    await check();
+    expect(isActive(wrapper)).toBe(true);
+    expect(wrapper.emitted("update")).toEqual([[exampleRows()]]);
+  });
+
+  it("becomes not active when the focus leaves the table and emits the rows", async () => {
+    const wrapper = mountTable();
+    await focusTable(wrapper);
+    await check();
+    document.activeElement.blur();
+    await check();
+    expect(isActive(wrapper)).toBe(false);
+    expect(wrapper.emitted("update")).toEqual([[exampleRows()], [exampleRows()]]);
+  });
+
+  it("does not emit the rows while the focus moves inside the table", async () => {
+    const wrapper = mountTable();
+    await focusCell(wrapper, 0, 3);
+    await check();
+    await pressOnFocused(wrapper, "ArrowDown");
+    await check();
+    await pressOnFocused(wrapper, "Enter");
+    await check();
+    expect(isActive(wrapper)).toBe(true);
+    expect(wrapper.emitted("update")).toHaveLength(1);
+  });
+
+  it("stops the check when the table is unmounted", async () => {
+    const wrapper = mountTable();
+    expect(vi.getTimerCount()).toBe(1);
+    wrapper.unmount();
+    expect(vi.getTimerCount()).toBe(0);
   });
 });
 
