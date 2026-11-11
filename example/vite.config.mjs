@@ -8,8 +8,12 @@ import ViteFonts from 'unplugin-fonts/vite'
 import { defineConfig } from 'vite'
 import { fileURLToPath, URL } from 'node:url'
 
+// "component" mode uses the component built in the parent folder instead of the package from npm:
+//   npm run dev:local / npm run build:local
+const localComponent = fileURLToPath(new URL('../dist/editable-table.js', import.meta.url))
+
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     Vue({
       template: { transformAssetUrls }
@@ -29,8 +33,11 @@ export default defineConfig({
   define: { 'process.env': {} },
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      ...(mode === 'component' ? { '@mamenko/editable-table': localComponent } : {}),
     },
+    // The local component must use the same instances of Vue and Vuetify as the example
+    dedupe: ['vue', 'vuetify'],
     extensions: [
       '.js',
       '.json',
@@ -48,4 +55,4 @@ export default defineConfig({
   build: {
     outDir: process.env.OUT_DIR || 'dist',
   }
-})
+}))

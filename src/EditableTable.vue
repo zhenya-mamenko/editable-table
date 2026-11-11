@@ -6,6 +6,7 @@
   >
     <v-row
       :class="`d-flex d-sm-none flex-grow-1 ${height ? 'h-100' : ''}`"
+      no-gutters
     >
       <v-col
         class="text-center align-self-center"
@@ -15,6 +16,7 @@
     </v-row>
     <v-row v-if="!noHeader"
       class="flex-nowrap editable-table-header d-none d-sm-flex"
+      no-gutters
     >
       <v-col v-for="column in columns"
         :class="border ? 'editable-table-header-border' : ''"
@@ -27,6 +29,7 @@
     <v-row v-for="record in records"
       :class="`flex-nowrap editable-table-row d-none d-sm-flex`"
       :key="record.__id"
+      no-gutters
     >
       <editable-table-cell v-for="column in columns"
         :class="column.class ?? ''"
@@ -163,10 +166,10 @@
         const rowIndex = this.records.findIndex(r => r.__id === rowId);
         if (rowIndex + moveRow === -1) return;
         let row = this.records[rowIndex + moveRow];
-        if (!row && this.autoAddRow) {
-          rowId = this.newRow() ?? rowId;
-        } else {
+        if (row) {
           rowId = row.__id;
+        } else if (this.autoAddRow) {
+          rowId = this.newRow() ?? rowId;
         }
 
         const columnIndex = this.columns.findIndex(c => c.key === columnKey);
@@ -378,7 +381,7 @@
   .editable-table {
     --cell-error-outline: 2px solid rgb(var(--v-theme-error));
     --cell-focused-outline: 2px solid rgb(var(--v-theme-primary));
-    --cell-focused-outline-non-active: 2px solid rgba(var(--v-theme-primary), var(--v-disabled-opacity));
+    --cell-focused-outline-non-active: 2px solid color-mix(in srgb, rgb(var(--v-theme-primary)) calc(var(--v-disabled-opacity) * 100%), transparent);
     --cell-focused-outline-offset: -2px;
     --header-background-color: rgb(var(--v-theme-surface-light));
     --header-border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
@@ -391,6 +394,19 @@
 
   .editable-table:focus {
     outline: none;
+  }
+
+  /* Vuetify 4 grid has no row margins and column paddings, so the table sets its own */
+  .editable-table > .v-row {
+    margin: -12px;
+  }
+
+  .editable-table > .v-row + .v-row {
+    margin-top: 12px;
+  }
+
+  .editable-table > .v-row > .v-col {
+    padding: 12px;
   }
 
   .editable-table-header {
@@ -418,10 +434,6 @@
     height: 48px;
     min-height: 48px;
     max-height: 48px;
-  }
-
-  .editable-table-cell {
-    color: inherit;
   }
 
   .editable-table-cell-border {

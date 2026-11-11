@@ -42,7 +42,8 @@
       @keydown.enter.prevent.stop="handleBlur(0)"
       @keydown.shift.tab.stop.prevent="handleBlur(-1)"
       @keydown.tab.exact.stop.prevent="handleBlur(1)"
-      @keydown.esc.stop.prevent="() => { if (!menuOpened) cancelEdit() }"
+      @keydown.esc.stop.prevent="handleEscape"
+      @input="typed = true"
       @update:menu="handleMenu"
       @update:search="handleSearch"
     />
@@ -92,6 +93,17 @@
         return ["title", ...subtitle];
       },
 
+      // The list must be opened when the user is typing the text and there are items matching it.
+      // Vuetify closes the list without matching items and can leave it closed when the items appear:
+      // after loading of new items or when the text is changed right after closing
+      listMustBeOpened() {
+        const combobox = this.ref;
+        return Boolean(
+          this.showInput && this.typed && !this.listClosed
+          && combobox?.isFocused && !combobox.isPristine && !combobox.menu && combobox.filteredItems?.length > 0
+        );
+      },
+
       html() {
         if (this.format && this.value && this.value !== "") {
           const v = isPlainObject(this.value) ? flattenObject(this.value) : this.value;
@@ -112,6 +124,7 @@
         colWidth: this.width ?? null,
         inputValue: this.value,
         lastKey: "",
+        listClosed: false,
         listItems: [],
         loading: false,
         menuOpened: false,
@@ -119,6 +132,7 @@
         returnObject: false,
         showError: false,
         showInput: false,
+        typed: false,
       }
     },
 
@@ -185,18 +199,28 @@
         if (this.editing) return;
         this.$emit("selected");
         this.showInput = true;
+        this.listClosed = false;
+        this.typed = false;
         this.$nextTick(() => {
           this.ref.focus();
           if (value instanceof KeyboardEvent) {
-            this.inputValue = value.key;
-            this.ref.dispatchEvent(new Event("input"));
-            this.ref.$el.dispatchEvent(new KeyboardEvent("keydown", {
-              key: value.key, shiftKey: value.shiftKey, altKey: value.altKey, ctrlKey: value.ctrlKey,
-            }));
+            // Pass the pressed key to the input as the typed text, so the list is filtered by it
+            const input = this.ref.$el.querySelector("input:not([type=hidden])");
+            input.value = value.key;
+            input.dispatchEvent(new Event("input", { bubbles: true }));
           } else {
             this.inputValue = typeof value === "string" ? value : this.value
           }
         });
+      },
+
+      handleEscape() {
+        if (this.menuOpened) {
+          // The list is closed by the user and must stay closed until the text is changed
+          this.listClosed = true;
+        } else {
+          this.cancelEdit();
+        }
       },
 
       handleKeydown(e) {
@@ -234,6 +258,7 @@
       },
 
       async handleSearch(v) {
+        this.listClosed = false;
         this.$emit("search", v);
       },
 
@@ -318,6 +343,13 @@
           this.loadItems(newValue);
         },
         immediate: true,
+      },
+
+      listMustBeOpened(value) {
+        if (!value) return;
+        this.$nextTick(() => {
+          if (this.listMustBeOpened) this.ref.menu = true;
+        });
       },
 
       value(newValue) {

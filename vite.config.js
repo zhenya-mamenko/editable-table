@@ -2,10 +2,10 @@ import { defineConfig } from 'vite'
 import Vue from '@vitejs/plugin-vue'
 import Vuetify from 'vite-plugin-vuetify'
 import { resolve } from "node:path";
-import pkg from "./package.json";
+import pkg from "./package.json" with { type: "json" };
 import strip from '@rollup/plugin-strip';
 import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js'
-import replace from './build_utils/replace.js';
+import replace from './scripts/replace.js';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -20,11 +20,11 @@ export default defineConfig({
     minify: false,
     lib: {
       formats: ["es"],
-      entry: resolve(__dirname, "src/index.js"),
+      entry: resolve(import.meta.dirname, "src/index.js"),
       name: "EditableTable",
       fileName: "editable-table",
     },
-    rollupOptions: {
+    rolldownOptions: {
       external: [
         ...Object.keys(pkg.peerDependencies),
         /node_modules/,

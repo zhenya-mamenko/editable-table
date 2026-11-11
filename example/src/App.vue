@@ -6,13 +6,13 @@
           <v-col>
             <h1 class="display-1">Editable Table</h1>
             <p class="mt-2">
-              This component is a Vue 3 (Vuetify 3 based) editable table designed for use in web applications.
+              This component is a Vue 3 (Vuetify 4 based) editable table designed for use in web applications.
               It is a simple and easy-to-use component that allows you to create a table with editable cells.
             </p>
           </v-col>
         </v-row>
         <v-row>
-          <v-col cols="6" class="pe-1">
+          <v-col cols="6">
             <p>
               This example demonstrates the use of the EditableTable component with the following features:
             </p>
@@ -27,9 +27,8 @@
               <li>Events handling</li>
             </ul>
           </v-col>
-          <v-col cols="1"></v-col>
-          <v-col cols="5">
-            <v-card  class="mt-n3">
+          <v-col cols="6">
+            <v-card>
               <v-card-title>
                 You can use keyboard while using the table
               </v-card-title>
@@ -53,7 +52,7 @@
                       <li><kbd>Arrow left</kbd> — move to the previous cell;</li>
                       <li><kbd>Arrow right</kbd>  — move to the next cell;</li>
                       <li><kbd>Enter</kbd> / <kbd>Space</kbd> — enter to editing mode;</li>
-                      <li><kbd>Del</kbd> <span class="text-caption">(x2)</span> — remove the row.</li>
+                      <li><kbd>Del</kbd> <span class="text-body-small">(x2)</span> — remove the row.</li>
                     </ul>
                   </li>
                 </ul>
@@ -76,7 +75,7 @@
           </v-col>
         </v-row>
         <v-row class="mb-3">
-          <v-col class="ps-4" cols="2">
+          <v-col class="ps-1" cols="2">
             <kbd class="bg-indigo-darken-4 pa-2">{{ mode }} mode</kbd>
           </v-col>
           <v-col>
@@ -197,3 +196,17 @@ export default {
   },
 }
 </script>
+
+<style>
+  /* Vuetify 4 no longer resets margins and paddings of native elements */
+  @layer vuetify-core.reset {
+    ul, ol {
+      padding: 0;
+      margin: 0;
+    }
+
+    h1, h2, h3, h4, h5, h6, p {
+      margin: 0;
+    }
+  }
+</style>
