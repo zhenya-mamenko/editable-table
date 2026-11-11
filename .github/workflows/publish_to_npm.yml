@@ -9,19 +9,23 @@ jobs:
   build:
     needs: tests
     runs-on: ubuntu-latest
+    # Trusted publishing: npm checks the OIDC token of this workflow instead of a stored npm token.
+    # The package settings on npmjs.com must trust this repository and the file publish_to_npm.yml
+    permissions:
+      contents: read
+      id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # Setup .npmrc file to publish to npm
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24.x'
           registry-url: 'https://registry.npmjs.org'
-          always-auth: false
+      # Trusted publishing needs npm 11.5.1 or above
+      - run: npm install --global npm@^11.5.1
       - run: npm ci
       - run: npm run build
       - run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   example:
     needs: build
