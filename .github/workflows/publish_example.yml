@@ -1,10 +1,9 @@
 name: Build and Deploy
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - example/**
+  # Called from publish_to_npm.yml after the component is published
+  workflow_call:
+  # Manual redeploy of the example for the already published version
+  workflow_dispatch:
 permissions:
   contents: write
 jobs:
@@ -15,10 +14,28 @@ jobs:
       - name: Checkout 🛎️
         uses: actions/checkout@v4
 
+      - name: Check published component version 🔍
+        run: |
+          version=$(tr -d '[:space:]' < VERSION)
+          package=$(node -p "require('./package.json').name")
+          # The registry may need some time to make the just published version available
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if [ "$(npm view "$package@$version" version 2>/dev/null)" = "$version" ]; then
+              echo "$package@$version is published"
+              exit 0
+            fi
+            echo "$package@$version is not available yet, attempt $attempt"
+            sleep 15
+          done
+          echo "::error file=VERSION::$package@$version is not published to npm registry, run publish_to_npm first"
+          exit 1
+
       - name: Install and Build 🔧
         run: |
           cd example/
-          npm ci
+          # Not "npm ci": the lock file may not contain the just published version of the component yet.
+          # "npm install" updates only the changed dependency, other packages stay locked
+          npm install --no-audit --no-fund
           npm run build_pages
 
       - name: Deploy 🚀

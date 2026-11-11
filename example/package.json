@@ -1,26 +1,29 @@
 {
   "name": "editable-table-example",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "build_pages": "OUT_DIR=build BASE_URL=/editable-table/ vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dev:local": "npm run build --prefix .. && vite --mode component",
+    "build:local": "npm run build --prefix .. && vite build --mode component",
+    "preview:local": "vite preview --mode component"
   },
   "dependencies": {
-    "@mamenko/editable-table": "^0.1.6",
-    "@mdi/font": "7.0.96",
-    "magic-string": "^0.30.11",
+    "@mamenko/editable-table": "^0.2.0",
+    "@mdi/font": "7.4.47",
+    "magic-string": "^1.4.5",
     "roboto-fontface": "*",
-    "vue": "^3.4.27",
-    "vuetify": "^3.7.2"
+    "vue": "^3.5.45",
+    "vuetify": "^4.3.3"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.0.4",
-    "sass": "^1.71.1",
-    "unplugin-fonts": "^1.1.1",
-    "unplugin-vue-components": "^0.26.0",
-    "vite": "^5.1.5",
-    "vite-plugin-vuetify": "^2.0.3"
+    "@vitejs/plugin-vue": "^6.0.10",
+    "sass": "^1.108.1",
+    "unplugin-fonts": "^2.1.0",
+    "unplugin-vue-components": "^32.1.0",
+    "vite": "^8.3.7",
+    "vite-plugin-vuetify": "^2.1.3"
   }
 }

@@ -1,8 +1,10 @@
 {
   "include": ["src/**/*"],
   "compilerOptions": {
-    "target": "es5",                          /* Specify ECMAScript target version: 'ES3' (default), 'ES5', 'ES2015', 'ES2016', 'ES2017', 'ES2018', 'ES2019', 'ES2020', or 'ESNEXT'. */
+    "target": "es2020",                       /* Specify ECMAScript target version. */
     "module": "commonjs",                     /* Specify module code generation: 'none', 'commonjs', 'amd', 'system', 'umd', 'es2015', 'es2020', or 'ESNext'. */
+    "rootDir": "./src",                       /* Root folder of the source files; keeps module names in the bundled declaration file relative to 'src'. */
+    "ignoreDeprecations": "6.0",              /* 'outFile' (used by the build script to bundle declarations) is deprecated in TypeScript 6. */
     "esModuleInterop": true,                  /* Enables emit interoperability between CommonJS and ES Modules via creation of namespace objects for all imports. Implies 'allowSyntheticDefaultImports'. */
     "skipLibCheck": true,                     /* Skip type checking of declaration files. */
     "forceConsistentCasingInFileNames": true  /* Disallow inconsistently-cased references to the same file. */
